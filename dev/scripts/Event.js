@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 import {EventsPage, EventCard} from './Eventspage';
 
-// renders our event as an individual url so we can send this event url to ppl to invite them
+
 export default class Event extends React.Component {
     constructor(props){
         super(props);
@@ -16,62 +16,39 @@ export default class Event extends React.Component {
             recipes: [],
             ingredients: []
         };
+        // this.handleClick = this.handleClick.bind(this);
         this.addUser = this.addUser.bind(this);
     }
-    componentDidUpdate() {
-        // const Array =[];
-        // console.log(Array);
-        
-    }
     componentDidMount(){
-        // refer to our public events path and grab the all objects in the recipes object
+        
+        // const dbRef = firebase.database().ref(``)
+        // const userId = firebase.auth().currentUser.uid;
         const dbRef = firebase.database().ref(`${this.state.url}`);
         dbRef.on('value', (snapshot) => {
             const e = snapshot.val();
-            const recipez = e.recipes;
+            const data = e.recipes;
             const recipes = [];
-
-            for (let recipe in recipez) {
-                recipes.push(recipez[recipe]);
+            for (let key in data) {
+                recipes.push(data[key]);
             }
-            
-            // console.log(Array.from(this.props.events));
-            
-            
-            // console.log(recipes);
-            
-            recipes.map(recipe=>{
-                const ingredients = [];
-                // console.log(recipe);
-                for( let property in recipe){
-                    // console.log(property);
-                    if (/Ingredient/.test(property)){
-                        if(!recipe[property]){
-                            delete recipe[property];
-                            // console.log(recipe[property])
-                            // recipe.ingredients = ingredients.push(recipe[property]);
-                        } else{
-                            
-                            // console.log(recipe[property]);
-                            // const newArray= [];
-                            ingredients.push(recipe[property]); 
-                            
-                            recipe.ingredient = ingredients;
-                            
-                            // console.log(newArray);
-                            
+
+            console.log(recipes);
+            const ingredients = [];
+            recipes.map((recipe)=>{
+                for (let property in recipe){
+                    if (/Ingredient/.test(property)) {
+                        if (recipe[property]) {
+                            ingredients.push(recipe[property]);
                         }
+                        this.setState({
+                            ingredients
+                        })
+                        // console.log(ingredients)
                     }
                 }
-                // console.log(recipe);
-                // recipes.push(recipe);
-                { console.log(typeof Array.from(this.props.events)) }
-                
             })
-            
-            
-            
-            // setstate of what we get from snapshot 
+
+
             this.setState({
                 eName: e.eventName,
                 eDate: e.eventDate,
@@ -80,26 +57,24 @@ export default class Event extends React.Component {
                 eHost: e.eventHost
                 // guests : snapshot.val().guests
             })
-            // if we have guests then also set guests sas an array
+
             if(snapshot.val().guests){
                 this.setState({
-                    guests: snapshot.val().guests 
+                guests: snapshot.val().guests 
                 })
             }
         })
-        
-        
+
+  
     }
     
-    // used to just set our /events/url for easy access
     componentWillMount() {
         this.setState({
             url: this.props.match.url,
+            // userId: this.props.user.uid
         });
-        // console.log(this.props.events);
     }
     
-    // method used to 
     addUser(e) {
         e.preventDefault();
         const guestID = this.props.user.uid;
@@ -107,13 +82,13 @@ export default class Event extends React.Component {
         let guestsNew = this.state.guests.slice();
         guestsNew.push(guestID);
         
+
         this.setState({
             guests: guestsNew
         })
-        // set our guest array to firebase in the event
         const dbRef = firebase.database().ref(`${this.state.url}/guests`);
         dbRef.set(guestsNew);
-        // console.log(guestsNew)
+        console.log(guestsNew)
     }
     
 
@@ -124,24 +99,30 @@ export default class Event extends React.Component {
                 <p>{this.state.eDate}</p>
                 <p>{this.state.eDesc}</p>
                 {this.state.recipes.map((recipe, key) => {
-                    return (
-                        <div className="eventRecipeCard" key={key}>
-                            <h3>{recipe.strDrink}</h3>
-                            <ul>
-                                {recipe.ingredient.map((ing)=>{
-                                   return <li><input type='checkbox'/>{ing}</li>
-                                })}
-                            </ul>
-                        </div>
+                    for(let property in recipe) {
+                        if(/Ingredient/.test(property)) {
+                            
+                            return (
+                                <div className="eventRecipeCard" key={key}>
+                                    <h3>{recipe.strDrink}</h3>
+                                    <p>{recipe.strInstructions}</p>
+                                    <ul>
+                                        <li>{recipe[property]}</li>
+                                    </ul>
+                                </div>
+                                )
+                            }
+                        }
+                            
+                    }
+                )
+            }
+                    
 
-                        )
-                    })}
-                <button onClick={this.addUser}>Join the thing!</button>
+                {this.state.guests.includes(this.props.user.uid) || firebase.auth().currentUser.uid == this.state.eHost ? null :
+                    <button onClick={this.addUser}>Join the thing!</button>   
+                }
            </Fragment>
         )
     }
-
 }
-
-
-
